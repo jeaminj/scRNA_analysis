@@ -1,1 +1,1 @@
-# various scRNA-seq analysis in notebook format
+# Single Cell RNAseq Analysis Workflow
