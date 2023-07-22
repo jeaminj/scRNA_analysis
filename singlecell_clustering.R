@@ -7,6 +7,7 @@
 library(Seurat)
 library(SingleR)
 library(celldex)
+library(pheatmap)
 
 # Clustering ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -34,8 +35,7 @@ integrated_seurat <- RunUMAP(integrated_seurat, dims = 1:10)
 DimPlot(integrated_seurat, reduction = 'umap', label = TRUE)
 DimPlot(integrated_seurat, reduction = 'umap', group.by = 'sample')
 
-# Auto-annotation with SingleR ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\
-
+# Auto-annotation with SingleR ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # reference data 
 ref <- celldex::HumanPrimaryCellAtlasData()
 
@@ -51,4 +51,14 @@ integrated_seurat$singleR_annotation <- pred$labels[match(rownames(integrated_se
 
 # Visualize annotated plot
 DimPlot(integrated_seurat, reduction = 'umap', group.by = 'singleR_annotation', label =TRUE) + NoLegend()
+
+
+# Annotation Quality Check ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+plotScoreHeatmap(pred)
+plotDeltaDistribution(pred)
+
+# Comparing to unsupervised clustering
+tab <- table(Assigned=pred$labels, Clusters=integrated_seurat$seurat_clusters)
+pheatmap(log10(tab+10), color = colorRampPalette(c('white','brown'))(10))
 
