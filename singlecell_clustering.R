@@ -62,3 +62,7 @@ plotDeltaDistribution(pred)
 tab <- table(Assigned=pred$labels, Clusters=integrated_seurat$seurat_clusters)
 pheatmap(log10(tab+10), color = colorRampPalette(c('white','brown'))(10))
 
+
+
+# Saving the integrated seurat object ------------
+integrated_seurat <- saveRDS(integrated_seurat, "data/integrated_seurat.rds")

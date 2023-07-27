@@ -102,6 +102,9 @@ filtered_seurat <- subset(x = merged_seurat,
                                   (log10GenesPerUMI > 0.80) & 
                                   (mitoRatio < 0.20))
 
+# Saving the filtered_seurat object -------------
+saveRDS(filtered_seurat, "data/filtered_seurat.rds")
+
 # Visualizing filtered data ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 metadata_clean <- filtered_seurat@meta.data
 
