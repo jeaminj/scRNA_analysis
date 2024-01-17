@@ -1,2 +1,2 @@
-# Single Cell RNAseq Analysis Workflow
-This repository contains scripts following a standard workflow and analysis of single cell rnaseq data. It is intended for demonstration purposes~
+# Single Cell RNAseq Analysis Demonstrations
+This repository contains demonstrations of single cell analysis workflow processes in Rnotebook abd subsequent hmtl format
