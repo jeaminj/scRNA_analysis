@@ -1,0 +1,129 @@
+---
+title: "A549 scRNA-seq analysis: Clustering"
+output: html_notebook
+---
+Author: Jeamin Jung
+
+scRNAseq Analysis: 5k A549 Lung Carcinoma Cells, Treated (resveratrol) & untreated 
+
+Data subset from source: https://www.10xgenomics.com/resources/datasets/30-k-a-549-lung-carcinoma-cells-treatments-transduced-with-a-crispr-pool-multiplexed-6-cm-os-3-1-standard-6-0-0
+
+```{r}
+library(Seurat)
+library(SingleR)
+library(celldex)
+library(pheatmap)
+```
+
+
+```{r}
+# Clustering ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Determines dimensionality of the data (number of clusters that should be chosen)
+ElbowPlot(integrated_seurat) 
+```
+```{r}
+# Will continue with 10 dimensions, based on elbow plot results
+integrated_seurat <- FindNeighbors(integrated_seurat, dims = 1:10)
+integrated_seurat <- FindClusters(integrated_seurat, resolution = c(0.2, 0.4, 0.6, 0.8, 1.0))
+```
+
+```{r}
+# check cluster resolutions
+View(integrated_seurat@meta.data)
+DimPlot(integrated_seurat, group.by = "integrated_snn_res.0.2", label = TRUE)
+DimPlot(integrated_seurat, group.by = "integrated_snn_res.0.4", label = TRUE)
+DimPlot(integrated_seurat, group.by = "integrated_snn_res.0.6", label = TRUE)
+DimPlot(integrated_seurat, group.by = "integrated_snn_res.0.8", label = TRUE)
+DimPlot(integrated_seurat, group.by = "integrated_snn_res.1", label = TRUE)
+```
+```{r}
+# assigning identity of clusters
+Idents(integrated_seurat) <- "seurat_clusters"
+```
+
+```{r}
+# non linear dimensionality reduction
+integrated_seurat <- RunUMAP(integrated_seurat, dims = 1:10)
+
+DimPlot(integrated_seurat, reduction = 'umap', label = TRUE)
+DimPlot(integrated_seurat, reduction = 'umap', group.by = 'sample')
+
+```
+```{r}
+# Auto-annotation with SingleR ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# reference data 
+ref <- celldex::HumanPrimaryCellAtlasData()
+
+# get assay data
+integrated_seurat_data <- GetAssayData(integrated_seurat, slot = 'data')
+
+pred <- SingleR(test = integrated_seurat_data,
+                ref = ref,
+                labels = ref$label.main)
+```
+
+```{r}
+# Create and add singleR annotations column to the integrated_seurat metadata from predicted annotations 
+integrated_seurat$singleR_annotation <- pred$labels[match(rownames(integrated_seurat@meta.data), rownames(pred))]
+```
+
+```{r}
+# Visualize annotated plot
+DimPlot(integrated_seurat, reduction = 'umap', group.by = 'singleR_annotation', label =TRUE) + NoLegend()
+```
+
+```{r}
+# Annotation Quality Check ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+plotScoreHeatmap(pred)
+plotDeltaDistribution(pred)
+```
+
+```{r}
+# Comparing to unsupervised clustering
+tab <- table(Assigned=pred$labels, Clusters=integrated_seurat$seurat_clusters)
+pheatmap(log10(tab+10), color = colorRampPalette(c('gray95','darkblue'))(10), show_colnames = TRUE)
+```
+Exploration of Principal Components driving the different clusters:
+
+```{r}
+# Explore heatmap of PCs
+DimHeatmap(integrated_seurat, 
+           dims = 1:2, 
+           cells = 500, 
+           balanced = TRUE)
+```
+
+
+```{r}
+# Printing out the most variable genes driving PCs
+print(x = integrated_seurat[["pca"]], 
+      dims = 1:10, 
+      nfeatures = 5)
+```
+
+
+```{r}
+FeaturePlot(integrated_seurat, 
+            reduction = "umap", 
+            features = c("GPX2", "TPM1"), 
+            order = TRUE,
+            min.cutoff = 'q10', 
+            label = TRUE)
+```
+```{r}
+FeaturePlot(integrated_seurat, 
+            reduction = "umap", 
+            features = c("TOP2A", "NEAT1"), 
+            order = TRUE,
+            min.cutoff = 'q10', 
+            label = TRUE)
+```
+
+
+
+```{r}
+# Saving the integrated seurat object ------------
+integrated_seurat <- saveRDS(integrated_seurat, "data/integrated_seurat.rds")
+```
+
